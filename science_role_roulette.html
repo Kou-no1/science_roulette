@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班の役割ルーレット 🔬</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    background: #f5f4fb;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .app {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem 1.25rem;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 2px 16px rgba(127,119,221,0.10);
+  }
+
+  h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c2b50;
+    margin-bottom: 3px;
+  }
+  .subtitle {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 1.25rem;
+  }
+
+  /* ステップインジケーター */
+  .step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 1.25rem;
+  }
+  .step {
+    font-size: 11px;
+    color: #bbb;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .step.active { color: #7F77DD; font-weight: 600; }
+  .step.done { color: #aaa; }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .step-line { flex: 1; height: 1px; background: #e5e5e5; }
+
+  /* 名前入力 */
+  .setup-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .members-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .member-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: #faf9ff;
+    border: 1px solid #e8e5f8;
+    border-radius: 10px;
+    padding: 6px 10px;
+  }
+  .member-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .member-input-wrap input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: #333;
+    outline: none;
+    min-width: 0;
+  }
+  .member-input-wrap input::placeholder { color: #ccc; }
+
+  /* 役割一覧 */
+  .roles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-bottom: 1.25rem;
+  }
+  .role-badge {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 1px solid #f0eef9;
+    background: #faf9ff;
+  }
+  .role-icon { font-size: 16px; margin-top: 1px; }
+  .role-name { font-size: 12px; font-weight: 600; color: #3c3489; }
+  .role-desc { font-size: 10px; color: #888; margin-top: 2px; line-height: 1.3; }
+
+  /* ボタン */
+  .spin-btn {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 600;
+    background: #7F77DD;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+  .spin-btn:hover { opacity: 0.88; }
+  .spin-btn:active { transform: scale(0.98); }
+  .spin-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .spin-btn.green { background: #1D9E75; }
+
+  /* ルーレットドラム */
+  .current-role-label {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .current-role-label strong { color: #7F77DD; }
+  .roulette-stage {
+    position: relative;
+    height: 200px;
+    border-radius: 14px;
+    border: 1.5px solid #e8e5f8;
+    background: #faf9ff;
+    overflow: hidden;
+  }
+  .drum {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    width: 100%;
+  }
+  .drum-item {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .highlight-bar {
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: 40px;
+    transform: translateY(-50%);
+    border-top: 2px solid #7F77DD;
+    border-bottom: 2px solid #7F77DD;
+    background: rgba(127,119,221,0.09);
+    pointer-events: none;
+  }
+  .arrow-l, .arrow-r {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7F77DD;
+    font-size: 18px;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .arrow-l { left: 10px; }
+  .arrow-r { right: 10px; }
+
+  /* 進捗ドット */
+  .progress-dots {
+    display: flex;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 10px;
+  }
+  .prog-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #ddd;
+    transition: background 0.3s;
+  }
+  .prog-dot.done-dot { background: #7F77DD; }
+  .prog-dot.active-dot {
+    background: #7F77DD;
+    box-shadow: 0 0 0 3px rgba(127,119,221,0.25);
+  }
+
+  /* 結果カード */
+  .results-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #3c3489;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .result-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .result-card {
+    padding: 11px 12px;
+    border-radius: 12px;
+    border: 1.5px solid transparent;
+  }
+  .rc-role {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .rc-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .rc-name { font-size: 16px; font-weight: 700; }
+  .rc-desc { font-size: 10px; color: #888; margin-top: 3px; line-height: 1.3; }
+
+  .reset-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    color: #888;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .reset-btn:hover { background: #f5f5f5; }
+
+  /* 先生用モーダル */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(44,43,80,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 360px;
+    box-shadow: 0 8px 32px rgba(127,119,221,0.18);
+  }
+  .modal h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #3c3489;
+    margin-bottom: 12px;
+  }
+  .modal-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0eef9;
+  }
+  .modal-row:last-of-type { border-bottom: none; }
+  .modal-icon { font-size: 18px; }
+  .modal-role { font-size: 12px; color: #888; }
+  .modal-name { font-size: 15px; font-weight: 700; }
+  .modal-close {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 11px;
+    background: #7F77DD;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <h1>班の役割ルーレット 🔬</h1>
+  <p class="subtitle">理科授業 ・ 4人班用 ・ 小単元ごとにローテーション</p>
+
+  <div class="step-indicator">
+    <div class="step active" id="step1"><span class="step-dot"></span>名前を入力</div>
+    <div class="step-line"></div>
+    <div class="step" id="step2"><span class="step-dot"></span>役割を確認</div>
+    <div class="step-line"></div>
+    <div class="step" id="step3"><span class="step-dot"></span>抽選スタート</div>
+  </div>
+
+  <!-- 名前入力画面 -->
+  <div id="setup-view">
+    <div class="setup-label">👤 班のメンバーの名前を入力してね</div>
+    <div class="members-grid">
+      <div class="member-input-wrap"><div class="member-color" style="background:#7F77DD"></div><input id="m1" placeholder="1番" maxlength="6"></div>
+      <div class="member-input-wrap"><div class="member-color" style="background:#1D9E75"></div><input id="m2" placeholder="2番" maxlength="6"></div>
+      <div class="member-input-wrap"><div class="member-color" style="background:#D85A30"></div><input id="m3" placeholder="3番" maxlength="6"></div>
+      <div class="member-input-wrap"><div class="member-color" style="background:#D4537E"></div><input id="m4" placeholder="4番" maxlength="6"></div>
+    </div>
+
+    <div class="setup-label" style="margin-top:4px;">📋 今回の役割（小単元ごとにかわるよ）</div>
+    <div class="roles-grid">
+      <div class="role-badge"><span class="role-icon">💬</span><div><div class="role-name">予想発表</div><div class="role-desc">グループの予想を代表して発表する</div></div></div>
+      <div class="role-badge"><span class="role-icon">✏️</span><div><div class="role-name">実験記録</div><div class="role-desc">観察・データをワークシートに記録</div></div></div>
+      <div class="role-badge"><span class="role-icon">📢</span><div><div class="role-name">結果発表</div><div class="role-desc">実験の結果・考察をクラスに発表</div></div></div>
+      <div class="role-badge"><span class="role-icon">🧹</span><div><div class="role-name">実験管理</div><div class="role-desc">器具の準備・かたづけ・安全チェック</div></div></div>
+    </div>
+
+    <button class="spin-btn" onclick="startRoulette()">✨ 役割を決める！</button>
+  </div>
+
+  <!-- ルーレット画面 -->
+  <div id="roulette-view" style="display:none;">
+    <div class="current-role-label" id="current-role-label"></div>
+    <div class="roulette-stage">
+      <div class="drum" id="drum"></div>
+      <div class="highlight-bar"></div>
+      <div class="arrow-l">▶</div>
+      <div class="arrow-r">◀</div>
+    </div>
+    <div class="progress-dots" id="progress-dots"></div>
+    <button class="spin-btn" id="spin-btn" onclick="spinDrum()" style="margin-top:1.25rem;">🎲 まわす！</button>
+  </div>
+
+  <!-- 結果画面 -->
+  <div id="results-view" style="display:none;">
+    <div class="results-title">🌟 今回の役割分担</div>
+    <div class="result-cards" id="result-cards"></div>
+    <button class="spin-btn green" onclick="openModal()">📋 先生に見せる用に表示</button>
+    <button class="reset-btn" onclick="resetApp()">🔄 もう一度やり直す</button>
+  </div>
+</div>
+
+<!-- 先生用モーダル -->
+<div class="modal-bg" id="modal-bg" onclick="closeModalBg(event)">
+  <div class="modal">
+    <h2>📋 今回の役割分担</h2>
+    <div id="modal-rows"></div>
+    <button class="modal-close" onclick="closeModal()">閉じる</button>
+  </div>
+</div>
+
+<script>
+const ROLES = [
+  { name: "予想発表", icon: "💬", desc: "グループの予想を代表して発表する" },
+  { name: "実験記録", icon: "✏️", desc: "観察・データをワークシートに記録" },
+  { name: "結果発表", icon: "📢", desc: "実験の結果・考察をクラスに発表" },
+  { name: "実験管理", icon: "🧹", desc: "器具の準備・かたづけ・安全チェック" }
+];
+const COLORS      = ["#7F77DD","#1D9E75","#D85A30","#D4537E"];
+const LIGHT_COLORS= ["#EEEDFE","#E1F5EE","#FAECE7","#FBEAF0"];
+const BORDER_COLORS=["#AFA9EC","#5DCAA5","#F0997B","#ED93B1"];
+
+const ITEM_H = 40;
+let members = [], shuffled = [], assignments = [];
+let currentRoleIdx = 0, spinning = false;
+
+function getNames(){
+  return [
+    document.getElementById("m1").value.trim()||"1番",
+    document.getElementById("m2").value.trim()||"2番",
+    document.getElementById("m3").value.trim()||"3番",
+    document.getElementById("m4").value.trim()||"4番"
+  ];
+}
+
+function startRoulette(){
+  members  = getNames();
+  shuffled = [...members];
+  assignments = [];
+  currentRoleIdx = 0;
+  document.getElementById("setup-view").style.display   = "none";
+  document.getElementById("roulette-view").style.display = "block";
+  setStep(1,2);
+  buildProgressDots();
+  buildDrum(shuffled);
+  updateRoleLabel();
+}
+
+function setStep(done, active){
+  ["step1","step2","step3"].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    el.className = "step" + (i+1===active?" active": i+1<=done?" done":"");
+  });
+}
+
+function buildProgressDots(){
+  document.getElementById("progress-dots").innerHTML =
+    ROLES.map((_,i)=>`<div class="prog-dot ${i===0?"active-dot":""}" id="pd${i}"></div>`).join("");
+}
+function updateProgressDots(){
+  ROLES.forEach((_,i)=>{
+    const d = document.getElementById("pd"+i);
+    if(!d) return;
+    d.className = "prog-dot" + (i<currentRoleIdx?" done-dot":i===currentRoleIdx?" active-dot":"");
+  });
+}
+function updateRoleLabel(){
+  if(currentRoleIdx<ROLES.length){
+    const r = ROLES[currentRoleIdx];
+    document.getElementById("current-role-label").innerHTML =
+      `今、決める役割：<strong>${r.icon} ${r.name}</strong>`;
+  }
+}
+
+function buildDrum(names){
+  const drum = document.getElementById("drum");
+  const all  = [...names,...names,...names];
+  drum.innerHTML = all.map(name=>{
+    const ci = members.indexOf(name);
+    const c  = ci>=0 ? COLORS[ci]       : COLORS[0];
+    const bg = ci>=0 ? LIGHT_COLORS[ci] : LIGHT_COLORS[0];
+    return `<div class="drum-item" style="background:${bg};color:${c};">
+      <span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block;"></span>
+      <span>${name}</span>
+    </div>`;
+  }).join("");
+  drum.style.transform = `translateY(-${ITEM_H}px)`;
+}
+
+function spinDrum(){
+  if(spinning) return;
+  spinning = true;
+  document.getElementById("spin-btn").disabled = true;
+
+  const pool      = [...shuffled];
+  const targetIdx = Math.floor(Math.random()*pool.length);
+  const target    = pool[targetIdx];
+  const loops     = 3;
+  const finalDist = (loops * pool.length + targetIdx) * ITEM_H;
+  const totalMs   = 2400 + Math.random()*600;
+
+  let elapsed = 0, lastTs = null;
+  const drum  = document.getElementById("drum");
+
+  function animate(ts){
+    if(!lastTs) lastTs = ts;
+    elapsed += ts - lastTs;
+    lastTs   = ts;
+    const prog  = Math.min(elapsed/totalMs, 1);
+    const eased = 1 - Math.pow(1-prog, 3);
+    const moved = eased * finalDist;
+    const disp  = -((moved % (pool.length*ITEM_H)) + ITEM_H);
+    drum.style.transform = `translateY(${disp}px)`;
+    if(prog < 1){ requestAnimationFrame(animate); }
+    else{ onSpinEnd(target); }
+  }
+  requestAnimationFrame(animate);
+}
+
+function onSpinEnd(name){
+  spinning = false;
+  const role = ROLES[currentRoleIdx];
+  assignments.push({role, name});
+  shuffled = shuffled.filter(n=>n!==name);
+
+  setTimeout(()=>{
+    currentRoleIdx++;
+    updateProgressDots();
+    if(currentRoleIdx < ROLES.length){
+      updateRoleLabel();
+      buildDrum(shuffled);
+      document.getElementById("spin-btn").disabled = false;
+    } else {
+      showResults();
+    }
+  }, 700);
+}
+
+function showResults(){
+  document.getElementById("roulette-view").style.display = "none";
+  document.getElementById("results-view").style.display  = "block";
+  setStep(2,3);
+  const rc = document.getElementById("result-cards");
+  rc.innerHTML = assignments.map(a=>{
+    const ci  = members.indexOf(a.name);
+    const c   = ci>=0 ? COLORS[ci]       : COLORS[0];
+    const bg  = ci>=0 ? LIGHT_COLORS[ci] : LIGHT_COLORS[0];
+    const brd = ci>=0 ? BORDER_COLORS[ci]: BORDER_COLORS[0];
+    return `<div class="result-card" style="background:${bg};border-color:${brd};">
+      <div class="rc-role"><div class="rc-dot" style="background:${c}"></div>${a.role.icon} ${a.role.name}</div>
+      <div class="rc-name" style="color:${c};">${a.name}</div>
+      <div class="rc-desc">${a.role.desc}</div>
+    </div>`;
+  }).join("");
+}
+
+function openModal(){
+  const rows = document.getElementById("modal-rows");
+  rows.innerHTML = assignments.map(a=>`
+    <div class="modal-row">
+      <span class="modal-icon">${a.role.icon}</span>
+      <div>
+        <div class="modal-role">${a.role.name}</div>
+        <div class="modal-name">${a.name}</div>
+      </div>
+    </div>`).join("");
+  document.getElementById("modal-bg").classList.add("open");
+}
+function closeModal(){ document.getElementById("modal-bg").classList.remove("open"); }
+function closeModalBg(e){ if(e.target===document.getElementById("modal-bg")) closeModal(); }
+
+function resetApp(){
+  assignments = []; shuffled = []; members = []; currentRoleIdx = 0;
+  document.getElementById("results-view").style.display  = "none";
+  document.getElementById("roulette-view").style.display = "none";
+  document.getElementById("setup-view").style.display    = "block";
+  ["step1","step2","step3"].forEach((id,i)=>
+    document.getElementById(id).className="step"+(i===0?" active":""));
+}
+</script>
+</body>
+</html>
