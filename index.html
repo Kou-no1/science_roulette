@@ -57,7 +57,7 @@
   .step-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .step-line { flex: 1; height: 1px; background: #e5e5e5; }
 
-  /* 名前入力 */
+  /* 番号表示 */
   .setup-label {
     font-size: 12px;
     color: #666;
@@ -70,26 +70,20 @@
     gap: 8px;
     margin-bottom: 14px;
   }
-  .member-input-wrap {
+  .member-badge {
     display: flex;
     align-items: center;
-    gap: 7px;
+    justify-content: center;
+    gap: 8px;
     background: #faf9ff;
     border: 1px solid #e8e5f8;
     border-radius: 10px;
-    padding: 6px 10px;
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #3c3489;
   }
-  .member-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .member-input-wrap input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    font-size: 14px;
-    color: #333;
-    outline: none;
-    min-width: 0;
-  }
-  .member-input-wrap input::placeholder { color: #ccc; }
+  .member-color { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 
   /* 役割一覧 */
   .roles-grid {
@@ -310,7 +304,7 @@
   <p class="subtitle">理科授業 ・ 4人班用 ・ 小単元ごとにローテーション</p>
 
   <div class="step-indicator">
-    <div class="step active" id="step1"><span class="step-dot"></span>名前を入力</div>
+    <div class="step active" id="step1"><span class="step-dot"></span>メンバー確認</div>
     <div class="step-line"></div>
     <div class="step" id="step2"><span class="step-dot"></span>役割を確認</div>
     <div class="step-line"></div>
@@ -319,12 +313,12 @@
 
   <!-- 名前入力画面 -->
   <div id="setup-view">
-    <div class="setup-label">👤 班のメンバーの名前を入力してね</div>
+    <div class="setup-label">👥 班のメンバー</div>
     <div class="members-grid">
-      <div class="member-input-wrap"><div class="member-color" style="background:#7F77DD"></div><input id="m1" placeholder="1番" maxlength="6"></div>
-      <div class="member-input-wrap"><div class="member-color" style="background:#1D9E75"></div><input id="m2" placeholder="2番" maxlength="6"></div>
-      <div class="member-input-wrap"><div class="member-color" style="background:#D85A30"></div><input id="m3" placeholder="3番" maxlength="6"></div>
-      <div class="member-input-wrap"><div class="member-color" style="background:#D4537E"></div><input id="m4" placeholder="4番" maxlength="6"></div>
+      <div class="member-badge"><div class="member-color" style="background:#7F77DD"></div>1番</div>
+      <div class="member-badge"><div class="member-color" style="background:#1D9E75"></div>2番</div>
+      <div class="member-badge"><div class="member-color" style="background:#D85A30"></div>3番</div>
+      <div class="member-badge"><div class="member-color" style="background:#D4537E"></div>4番</div>
     </div>
 
     <div class="setup-label" style="margin-top:4px;">📋 今回の役割（小単元ごとにかわるよ）</div>
@@ -385,12 +379,7 @@ let members = [], shuffled = [], assignments = [];
 let currentRoleIdx = 0, spinning = false;
 
 function getNames(){
-  return [
-    document.getElementById("m1").value.trim()||"1番",
-    document.getElementById("m2").value.trim()||"2番",
-    document.getElementById("m3").value.trim()||"3番",
-    document.getElementById("m4").value.trim()||"4番"
-  ];
+  return ["1番", "2番", "3番", "4番"];
 }
 
 function startRoulette(){
