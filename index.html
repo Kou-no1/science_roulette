@@ -291,7 +291,9 @@
     padding: clamp(16px, 3vw, 28px) clamp(16px, 3vw, 28px);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
     animation: popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
   }
   @keyframes popIn {
@@ -304,17 +306,19 @@
   .modal-card:nth-child(4){ animation-delay: 0.24s; }
 
   .mc-role-row {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
   }
   .mc-role-icon {
-    font-size: clamp(18px, 3vw, 26px);
+    font-size: clamp(20px, 4vw, 30px);
     line-height: 1;
   }
   .mc-role-name {
-    font-size: clamp(13px, 2.2vw, 18px);
-    font-weight: 800;
-    color: rgba(255,255,255,0.85);
-    letter-spacing: 0.02em;
+    font-size: clamp(16px, 3vw, 24px);
+    font-weight: 900;
+    color: rgba(255,255,255,0.95);
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+    white-space: nowrap;
   }
   .mc-member {
     font-size: clamp(38px, 9vw, 72px);
