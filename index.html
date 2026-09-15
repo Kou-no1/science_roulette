@@ -441,10 +441,17 @@ function setStep(done, active){
 /* ---------- 開始 ---------- */
 function startRoulette(){
   assignments = [];
+  spinning = false;
   document.getElementById("setup-view").style.display    = "none";
   document.getElementById("roulette-view").style.display = "block";
   setStep(1,2);
   buildDrums();
+
+  // 前回のスピンでボタンが disabled のまま残ってしまい、
+  // 2回目以降まわせなくなるのを防ぐためリセットする
+  const btn = document.getElementById("spin-btn");
+  btn.disabled = false;
+  btn.textContent = "🎲 まわす！";
 }
 
 /* ---------- ドラム4列を構築 ---------- */
@@ -475,6 +482,16 @@ function buildDrums(){
   }).join("");
 }
 
+/* ---------- 偏りのないシャッフル（Fisher-Yates法） ---------- */
+function shuffleIndices(n){
+  const arr = [...Array(n).keys()];
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 /* ---------- 一斉スピン ---------- */
 function spinAll(){
   if(spinning) return;
@@ -482,8 +499,8 @@ function spinAll(){
   document.getElementById("spin-btn").disabled = true;
   document.getElementById("spin-btn").textContent = "⏳ 抽選中…";
 
-  // ランダムにシャッフルして4人に役割を割り当て
-  const shuffled = [...Array(4).keys()].sort(()=>Math.random()-0.5);
+  // ランダムにシャッフルして4人に役割を割り当て（偏りのないFisher-Yates法）
+  const shuffled = shuffleIndices(4);
   // shuffled[ri] = 役割riを担当するメンバーindex
 
   const totalMs = 2600;
